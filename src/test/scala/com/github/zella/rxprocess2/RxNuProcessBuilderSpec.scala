@@ -138,7 +138,7 @@ class RxNuProcessBuilderSpec extends FlatSpec with Matchers {
     stdout.assertResult("hello", "world")
   }
 
-  "Infinity Process asWaitDone " should "be killed after timeout" in {
+  "Infinity Process asWaitDone " should "be disposed after timeout" in {
 
     val observer = new TestObserver[Exit]
 
@@ -153,5 +153,22 @@ class RxNuProcessBuilderSpec extends FlatSpec with Matchers {
     observer.values().get(0).statusCode shouldBe Integer.MIN_VALUE
     observer.values().get(0).err.get() shouldBe an[ProcessTimeoutException]
   }
+
+  "Infinity Process asStdout" should "be disposed after timeout" in {
+
+    val observer = new TestObserver[String]
+
+    val src: Observable[Array[Byte]] = RxNuProcessBuilder.fromCommand(util.Arrays.asList("sleep", "999"))
+      .asStdOut(2, TimeUnit.SECONDS)
+
+    val decoded: Observable[String] = Strings.decode(src.toFlowable(BackpressureStrategy.BUFFER), Charset.defaultCharset()).toObservable
+
+    decoded.subscribeOn(Schedulers.io).subscribe(observer)
+
+    observer.await(5, TimeUnit.SECONDS)
+    observer.assertError(classOf[ProcessTimeoutException])
+    observer.assertNotComplete()
+  }
+
 
 }

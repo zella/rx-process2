@@ -43,7 +43,7 @@ class AsStdOut {
 
         @Override
         void onError(ProcessException error) {
-            rxOut.onError(error);
+            if (!rxOut.isDisposed()) rxOut.onError(error);
         }
 
         @Override

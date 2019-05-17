@@ -58,7 +58,7 @@ public class RxNuProcessBuilder {
     }
 
     /**
-     * Same as asStdOut, with default timeout. Default timeout - 60 sec, can be set via rxprocess2.defaultTimeoutMillis property
+     * Same as asStdOut, with default timeout. Default timeout -1, means no timeout, can be set via rxprocess2.defaultTimeoutMillis property
      *
      * @return stdout observable
      */
@@ -87,7 +87,7 @@ public class RxNuProcessBuilder {
     }
 
     /**
-     * Same as asStdOutSingle, with default timeout. Default timeout - 60 sec, can be set via rxprocess2.defaultTimeoutMillis property
+     * Same as asStdOutSingle, with default timeout. Default timeout -1, means no timeout, can be set via rxprocess2.defaultTimeoutMillis property
      *
      * @return stdout single
      */
@@ -96,7 +96,7 @@ public class RxNuProcessBuilder {
     }
 
     /**
-     * Represent process as all possible control flows, more @see {@link PreparedStreams}
+     * Represent process as all possible control flows - {@link PreparedStreams}
      *
      * @return stream container
      */
@@ -108,7 +108,7 @@ public class RxNuProcessBuilder {
     /**
      * Represent process as single "done" callback
      *
-     * @param timeout  process timeout
+     * @param timeout  process timeout. -1 for no timeout
      * @param timeUnit process timeout units
      * @return single contained process exit code with optional failure
      */
@@ -117,7 +117,7 @@ public class RxNuProcessBuilder {
     }
 
     /**
-     * Same as waitDone with default timeout. Default timeout - 60 sec, can be set via rxprocess2.defaultTimeoutMillis property
+     * Same as waitDone with default timeout. Default timeout -1, means no timeout, can be set via rxprocess2.defaultTimeoutMillis property
      *
      * @return single contained process exit code with optional failure
      */

@@ -21,11 +21,25 @@ class AsStdOut {
         return Observable.create((ObservableOnSubscribe<byte[]>) emitter -> {
             ColdStdoutHandler handler = new ColdStdoutHandler(emitter);
             pb.builder.setProcessListener(handler);
-            NuProcess process = pb.builder.start();
-            emitter.setCancellable(() -> process.destroy(true));
-        }).takeUntil(Observable.timer(timeout, timeUnit).map(bytes -> {
-            throw new ProcessTimeoutException(Integer.MIN_VALUE);//like nuprocess
-        }));
+            NuProcess p = pb.builder.start();
+            emitter.setCancellable(() -> p.destroy(true));
+            //timeout handled by rx
+            int code = p.waitFor(0, timeUnit);
+            if (!emitter.isDisposed())
+                if (code == 0) {
+                    emitter.onComplete();
+                } else {
+                    emitter.onError(new ProcessException(code, handler.getErr()));
+                }
+        }).compose(o -> {
+                    if (timeout == -1)
+                        return o;
+                    else return o.takeUntil(Observable.timer(timeout, timeUnit).map(bytes -> {
+                        throw new ProcessTimeoutException(Integer.MIN_VALUE);
+                    }));
+                }
+
+        );
     }
 
     static class ColdStdoutHandler extends BaseRxHandler {
@@ -43,12 +57,12 @@ class AsStdOut {
 
         @Override
         void onError(ProcessException error) {
-            if (!rxOut.isDisposed()) rxOut.onError(error);
+            //do nothing
         }
 
         @Override
         void onComplete() {
-            rxOut.onComplete();
+            //do nothing
         }
 
     }

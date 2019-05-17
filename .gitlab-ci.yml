@@ -1,0 +1,22 @@
+variables:
+  SBT_OPTS: "-Dsbt.global.base=sbt-cache/.sbtboot -Dsbt.boot.directory=sbt-cache/.boot -Dsbt.ivy.home=sbt-cache/.ivy"
+
+cache:
+  key: $CI_COMMIT_REF_SLUG # caching per branch
+  untracked: true
+  paths:
+    - "sbt-cache/.ivy.cache"
+    - "sbt-cache/.boot"
+    - "sbt-cache/.sbtboot"
+    - "sbt-cache/target"
+
+stages:
+  - test
+
+test:
+  stage: test
+  image: "hseeberger/scala-sbt"
+  before_script:
+    - apt-get update; apt-get install -y python3
+  script:
+    - sbt test

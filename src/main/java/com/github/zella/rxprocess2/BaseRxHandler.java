@@ -13,7 +13,8 @@ import java.util.Collection;
 
 abstract class BaseRxHandler extends NuAbstractProcessHandler {
 
-    static int DEFAULT_PROCESS_TIMEOUT_MILLIS = Integer.getInteger("rxprocess2.defaultTimeoutMillis", 60000);
+    //no timeout by default
+    static int DEFAULT_PROCESS_TIMEOUT_MILLIS = Integer.getInteger("rxprocess2.defaultTimeoutMillis", -1);
 
     private static int STDERR_BUFF_SIZE = Integer.getInteger("rxprocess2.stderrBuffer", 16384);
 

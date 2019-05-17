@@ -9,10 +9,12 @@ import io.reactivex.Single;
 import io.reactivex.subjects.AsyncSubject;
 import io.reactivex.subjects.PublishSubject;
 
-import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
+/**
+ * Represents process as all possible control flows
+ */
 public class PreparedStreams {
 
     private final AsyncSubject<NuProcess> startedH = AsyncSubject.create();
@@ -44,14 +46,18 @@ public class PreparedStreams {
             } else {
                 emitter.onSuccess(new Exit(code, new ProcessException(code, handler.getErr())));
             }
-        }).timeout(timeout, timeUnit).onErrorReturn(e -> new Exit(Integer.MIN_VALUE, (e instanceof TimeoutException)
-                ? new ProcessTimeoutException(Integer.MIN_VALUE)
-                : new ProcessException(Integer.MIN_VALUE, e.getMessage())
-        ));
+        }).compose(s -> {
+            if (timeout == -1) return s;
+            else
+                return s.timeout(timeout, timeUnit).onErrorReturn(e -> new Exit(Integer.MIN_VALUE, (e instanceof TimeoutException)
+                        ? new ProcessTimeoutException(Integer.MIN_VALUE)
+                        : new ProcessException(Integer.MIN_VALUE, e.getMessage()))
+                );
+        });
     }
 
     /**
-     * Same as waitDone ith default timeout. Default timeout - 60 sec, can be set via rxprocess2.defaultTimeoutMillis property
+     * Same as {@link #waitDone(long, TimeUnit)} with default timeout. Default timeout -1, means no timeout, can be set via rxprocess2.defaultTimeoutMillis property
      *
      * @return single contained process exit code with optional failure
      */
@@ -80,7 +86,7 @@ public class PreparedStreams {
     /**
      * Stdout hot "callback"
      *
-     * @return Process stdin.
+     * @return Process stdout.
      */
     public Observable<byte[]> stdOut() {
         return handler.rxOut;

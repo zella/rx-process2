@@ -1,8 +1,9 @@
 package com.github.zella.rxprocess2
 
 
+import java.io.File
 import java.nio.charset.Charset
-import java.nio.file.Paths
+import java.nio.file.{Files, Paths}
 import java.util
 import java.util.concurrent.TimeUnit
 
@@ -170,5 +171,24 @@ class RxNuProcessBuilderSpec extends FlatSpec with Matchers {
     observer.assertNotComplete()
   }
 
+
+  "Process asStdoutBuffered with long output" should "be completed with collected stdout" in {
+
+    val testFile = new File(getClass.getClassLoader.getResource("long513339b.txt").getFile)
+
+    val observer = new TestObserver[String]
+
+    val src: Single[Array[Byte]] = RxNuProcessBuilder.fromCommand(util.Arrays.asList("cat", testFile.getAbsolutePath))
+      .asStdOutSingle()
+
+    val decoded: Single[String] = src.map(b => new String(b))
+
+    decoded.subscribeOn(Schedulers.io).subscribe(observer)
+
+    observer.await(5, TimeUnit.SECONDS)
+    observer.assertNoErrors()
+    observer.assertComplete()
+    observer.assertResult(new String(Files.readAllBytes(testFile.toPath), "UTF-8"))
+  }
 
 }

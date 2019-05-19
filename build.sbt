@@ -1,7 +1,7 @@
 import Dependencies._
 
 ThisBuild / scalaVersion := "2.12.8"
-ThisBuild / version := "0.1.0-SNAPSHOT"
+ThisBuild / version := "0.1.0-RC1-SNAPSHOT"
 ThisBuild / organization := "com.github.zella"
 ThisBuild / organizationName := "zella"
 
@@ -21,11 +21,12 @@ ThisBuild / developers := List(
   )
 )
 
+ThisBuild / credentials += Credentials("Sonatype Nexus Repository Manager", "oss.sonatype.org", sys.env("SONATYPE_USER"), sys.env("SONATYPE_PASS"))
+
 ThisBuild / description := "rx-java2 wrapper for NuProcess"
 ThisBuild / licenses := List("MIT" -> new URL("https://opensource.org/licenses/MIT"))
 ThisBuild / homepage := Some(url("https://github.com/zella/rx-process2"))
 
-// Remove all additional repository other than Maven Central from POM
 ThisBuild / pomIncludeRepository := { _ => false }
 ThisBuild / publishTo := {
   val nexus = "https://oss.sonatype.org/"
@@ -33,7 +34,8 @@ ThisBuild / publishTo := {
   else Some("releases" at nexus + "service/local/staging/deploy/maven2")
 }
 ThisBuild / publishMavenStyle := true
-//ThisBuild / useGpg := true 
+ThisBuild / updateOptions := updateOptions.value.withGigahorse(false)
+//ThisBuild / useGpg := true
 
 lazy val root = (project in file("."))
   .settings(

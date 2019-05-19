@@ -21,25 +21,15 @@ class AsStdOut {
         return Observable.create((ObservableOnSubscribe<byte[]>) emitter -> {
             ColdStdoutHandler handler = new ColdStdoutHandler(emitter);
             pb.builder.setProcessListener(handler);
-            NuProcess p = pb.builder.start();
-            emitter.setCancellable(() -> p.destroy(true));
-            //timeout handled by rx
-            int code = p.waitFor(0, timeUnit);
-            if (!emitter.isDisposed())
-                if (code == 0) {
-                    emitter.onComplete();
-                } else {
-                    emitter.onError(new ProcessException(code, handler.getErr()));
-                }
+            NuProcess process = pb.builder.start();
+            emitter.setCancellable(() -> process.destroy(true));
         }).compose(o -> {
-                    if (timeout == -1)
-                        return o;
-                    else return o.takeUntil(Observable.timer(timeout, timeUnit).map(bytes -> {
-                        throw new ProcessTimeoutException(Integer.MIN_VALUE);
-                    }));
-                }
-
-        );
+            if (timeout == -1)
+                return o;
+            else return o.takeUntil(Observable.timer(timeout, timeUnit).map(bytes -> {
+                throw new ProcessTimeoutException(Integer.MIN_VALUE);
+            }));
+        });
     }
 
     static class ColdStdoutHandler extends BaseRxHandler {
@@ -56,13 +46,13 @@ class AsStdOut {
         }
 
         @Override
-        void onError(ProcessException error) {
-            //do nothing
+        void onError(int code) {
+            if (!rxOut.isDisposed()) rxOut.onError(error(code, getErr()));
         }
 
         @Override
-        void onComplete() {
-            //do nothing
+        void onSuccesfullComplete() {
+            if (!rxOut.isDisposed()) rxOut.onComplete();
         }
 
     }

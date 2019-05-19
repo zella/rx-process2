@@ -6,6 +6,7 @@ import com.zaxxer.nuprocess.NuProcess;
 import io.reactivex.Observable;
 import io.reactivex.Observer;
 import io.reactivex.Single;
+import io.reactivex.SingleEmitter;
 import io.reactivex.subjects.AsyncSubject;
 import io.reactivex.subjects.PublishSubject;
 
@@ -34,18 +35,13 @@ public class PreparedStreams {
      */
     Single<Exit> waitDone(long timeout, TimeUnit timeUnit) {
         return Single.<Exit>create(emitter -> {
+            handler.setEmitter(emitter);
             pb.builder.setProcessListener(handler);
             NuProcess p = pb.builder.start();
             emitter.setCancellable(() -> p.destroy(true));
             startedH.onNext(p);
             startedH.onComplete();
             //timeout handled by rx
-            int code = p.waitFor(0, timeUnit);
-            if (code == 0) {
-                emitter.onSuccess(new Exit(code));
-            } else {
-                emitter.onSuccess(new Exit(code, new ProcessException(code, handler.getErr())));
-            }
         }).compose(s -> {
             if (timeout == -1) return s;
             else
@@ -95,7 +91,13 @@ public class PreparedStreams {
 
     static class HotStdoutHandler extends BaseRxHandler {
 
+        private SingleEmitter<Exit> emitter = null;
+
         final PublishSubject<byte[]> rxOut = PublishSubject.create();
+
+        void setEmitter(SingleEmitter<Exit> emitter) {
+            this.emitter = emitter;
+        }
 
         @Override
         void onNext(byte[] value) {
@@ -103,13 +105,18 @@ public class PreparedStreams {
         }
 
         @Override
-        void onError(ProcessException error) {
-            rxOut.onError(error);
+        void onError(int code) {
+            rxOut.onError(error(code, getErr()));
+            if (emitter != null && !emitter.isDisposed())
+                emitter.onSuccess(new Exit(code, new ProcessException(code, getErr())));
         }
 
         @Override
-        void onComplete() {
+        void onSuccesfullComplete() {
             rxOut.onComplete();
+            if (emitter != null && !emitter.isDisposed())
+                emitter.onSuccess(new Exit(0));
+
         }
     }
 

@@ -22,9 +22,9 @@ abstract class BaseRxHandler extends NuAbstractProcessHandler {
 
     abstract void onNext(@NonNull byte[] value);
 
-    abstract void onError(@NonNull ProcessException error);
+    abstract void onError(int code);
 
-    abstract void onComplete();
+    abstract void onSuccesfullComplete();
 
     private Collection<Byte> stderr = new CircularFifoQueue<>(STDERR_BUFF_SIZE);
 
@@ -58,7 +58,7 @@ abstract class BaseRxHandler extends NuAbstractProcessHandler {
         }
     }
 
-    private ProcessException error(int code, String err) {
+    ProcessException error(int code, String err) {
         return new ProcessException(code, err);
     }
 
@@ -71,8 +71,8 @@ abstract class BaseRxHandler extends NuAbstractProcessHandler {
     @Override
     public void onExit(int statusCode) {
         if (statusCode != 0)
-            onError(error(statusCode, getErr()));
+            onError(statusCode);
         else
-            onComplete();
+            onSuccesfullComplete();
     }
 }

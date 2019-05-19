@@ -1,7 +1,7 @@
 import Dependencies._
 
 ThisBuild / scalaVersion := "2.12.8"
-ThisBuild / version := "0.1.0-RC1-SNAPSHOT"
+ThisBuild / version := "0.1.0-RC1"
 ThisBuild / organization := "com.github.zella"
 ThisBuild / organizationName := "zella"
 
@@ -34,6 +34,7 @@ ThisBuild / publishTo := {
   else Some("releases" at nexus + "service/local/staging/deploy/maven2")
 }
 ThisBuild / publishMavenStyle := true
+ThisBuild / crossPaths := false
 ThisBuild / updateOptions := updateOptions.value.withGigahorse(false)
 //ThisBuild / useGpg := true
 

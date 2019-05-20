@@ -33,6 +33,7 @@ ThisBuild / publishTo := {
   if (isSnapshot.value) Some("snapshots" at nexus + "content/repositories/snapshots")
   else Some("releases" at nexus + "service/local/staging/deploy/maven2")
 }
+ThisBuild / autoScalaLibrary := false
 ThisBuild / publishMavenStyle := true
 ThisBuild / crossPaths := false
 ThisBuild / updateOptions := updateOptions.value.withGigahorse(false)

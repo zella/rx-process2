@@ -19,7 +19,7 @@ import java.util.concurrent.TimeoutException;
 public class PreparedStreams {
 
     private final AsyncSubject<NuProcess> startedH = AsyncSubject.create();
-    private HotStdoutHandler handler = new HotStdoutHandler();
+    private final HotStdoutHandler handler = new HotStdoutHandler();
     private final RxNuProcessBuilder pb;
 
     PreparedStreams(RxNuProcessBuilder builder) {
@@ -33,7 +33,7 @@ public class PreparedStreams {
      * @param timeUnit process timeout units
      * @return single contained process exit code with optional failure
      */
-    Single<Exit> waitDone(long timeout, TimeUnit timeUnit) {
+    public Single<Exit> waitDone(long timeout, TimeUnit timeUnit) {
         return Single.<Exit>create(emitter -> {
             handler.setEmitter(emitter);
             pb.builder.setProcessListener(handler);
@@ -57,7 +57,7 @@ public class PreparedStreams {
      *
      * @return single contained process exit code with optional failure
      */
-    Single<Exit> waitDone() {
+    public Single<Exit> waitDone() {
         return waitDone(BaseRxHandler.DEFAULT_PROCESS_TIMEOUT_MILLIS, TimeUnit.MILLISECONDS);
     }
 
@@ -107,14 +107,14 @@ public class PreparedStreams {
         @Override
         void onError(int code) {
             rxOut.onError(error(code, getErr()));
-            if (emitter != null && !emitter.isDisposed())
+            if (!emitter.isDisposed())
                 emitter.onSuccess(new Exit(code, new ProcessException(code, getErr())));
         }
 
         @Override
         void onSuccesfullComplete() {
             rxOut.onComplete();
-            if (emitter != null && !emitter.isDisposed())
+            if (!emitter.isDisposed())
                 emitter.onSuccess(new Exit(0));
 
         }

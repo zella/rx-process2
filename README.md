@@ -1,5 +1,7 @@
 **Rx java2 wrpapper for NuProcess** - Low-overhead, non-blocking I/O, external Process implementation for Java.
 
+Note: compiled with jdk11  
+
 ### Usage:
 Add dependency:
 

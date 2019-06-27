@@ -191,4 +191,33 @@ class RxNuProcessBuilderSpec extends FlatSpec with Matchers {
     observer.assertResult(new String(Files.readAllBytes(testFile.toPath), "UTF-8"))
   }
 
+  "Process asStdInOut with input" should "read early passed (before start) stdin" in {
+
+    val started = new TestObserver[NuProcess]
+    val stdout = new TestObserver[String]
+    val done = new TestObserver[Exit]
+
+    val src = RxNuProcessBuilder.fromCommand(util.Arrays.asList("cat"))
+      .asStdInOut()
+
+    Strings.decode(src.stdOut().toFlowable(BackpressureStrategy.BUFFER), Charset.defaultCharset()).toObservable.subscribe(stdout)
+    src.waitDone()
+      .subscribeOn(Schedulers.io)
+      .subscribe(done)
+
+    src.stdIn().onNext("hello".getBytes)
+    Thread.sleep(1000)
+    src.stdIn().onNext("world".getBytes)
+
+    src.started().subscribe(started)
+
+    src.stdIn().onComplete()
+    Thread.sleep(1000)
+
+    stdout.assertNoErrors()
+    stdout.assertComplete()
+    stdout.assertResult("hello", "world")
+  }
+
+
 }

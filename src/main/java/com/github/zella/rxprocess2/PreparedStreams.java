@@ -3,12 +3,12 @@ package com.github.zella.rxprocess2;
 import com.github.zella.rxprocess2.errors.ProcessException;
 import com.github.zella.rxprocess2.errors.ProcessTimeoutException;
 import com.zaxxer.nuprocess.NuProcess;
-import io.reactivex.Observable;
-import io.reactivex.Observer;
-import io.reactivex.Single;
-import io.reactivex.SingleEmitter;
+import io.reactivex.*;
+import io.reactivex.processors.ReplayProcessor;
 import io.reactivex.subjects.AsyncSubject;
 import io.reactivex.subjects.PublishSubject;
+import io.reactivex.subjects.ReplaySubject;
+import org.reactivestreams.Subscriber;
 
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -75,7 +75,7 @@ public class PreparedStreams {
      *
      * @return Process stdin.
      */
-    public Observer<byte[]> stdIn() {
+    public Subscriber<byte[]> stdIn() {
         return handler.rxIn;
     }
 

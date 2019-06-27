@@ -38,4 +38,4 @@ Returns set of "callback "streams, all streams except waitDone - hot. Subscripti
 	Single<NuProcess> started = streams.started();
 	Single<Exit> done = streams.waitDone();
 	Observable<byte[]> stdout = streams.stdOut();
-	Observer<byte[]> stdin = streams.stdIn();
+	Subscriber<byte[]> stdin = streams.stdIn();

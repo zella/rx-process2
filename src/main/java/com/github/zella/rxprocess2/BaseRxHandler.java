@@ -6,6 +6,7 @@ import com.github.zella.rxprocess2.etc.CircularFifoQueue;
 import com.zaxxer.nuprocess.NuAbstractProcessHandler;
 import com.zaxxer.nuprocess.NuProcess;
 import io.reactivex.annotations.NonNull;
+import io.reactivex.processors.ReplayProcessor;
 import io.reactivex.subjects.ReplaySubject;
 
 import java.nio.ByteBuffer;
@@ -18,7 +19,7 @@ abstract class BaseRxHandler extends NuAbstractProcessHandler {
 
     private static int STDERR_BUFF_SIZE = Integer.getInteger("rxprocess2.stderrBuffer", 16384);
 
-    final ReplaySubject<byte[]> rxIn = ReplaySubject.create();
+    final ReplayProcessor<byte[]> rxIn = ReplayProcessor.create();
 
     abstract void onNext(@NonNull byte[] value);
 

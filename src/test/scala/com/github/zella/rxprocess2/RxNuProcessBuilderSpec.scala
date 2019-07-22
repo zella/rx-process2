@@ -4,9 +4,12 @@ package com.github.zella.rxprocess2
 import java.io.File
 import java.nio.charset.Charset
 import java.nio.file.{Files, Paths}
+import java.time.Instant
 import java.util
+import java.util.Collections
 import java.util.concurrent.TimeUnit
 
+import scala.collection.JavaConverters._
 import com.github.davidmoten.rx2.Strings
 import com.github.zella.rxprocess2.errors.{ProcessException, ProcessTimeoutException}
 import com.zaxxer.nuprocess.NuProcess
@@ -219,5 +222,57 @@ class RxNuProcessBuilderSpec extends FlatSpec with Matchers {
     stdout.assertResult("hello", "world")
   }
 
+  "Process asStdoutBuffered" should "be executed serially in single thread scheduler" in {
+
+    def between(v: Long, min: Long, max: Long) = v > min && v < max
+
+    val src: Single[Array[Byte]] = RxNuProcessBuilder.fromCommand(util.Arrays.asList("bash", "-c", "sleep 1 && date +%s%3N"))
+      .asStdOutSingle()
+
+    val decoded: Single[Instant] = src.map(b => Instant.ofEpochMilli(new String(b).trim.toLong))
+
+    val test = Collections.synchronizedList(new util.ArrayList[Instant]()).asScala
+
+    val whatToTest = decoded.subscribeOn(Schedulers.single())
+
+    val now = Instant.now().toEpochMilli
+
+    whatToTest.subscribe(s => test.append(s))
+    whatToTest.subscribe(s => test.append(s))
+    whatToTest.subscribe(s => test.append(s))
+    whatToTest.subscribe(s => test.append(s))
+    Thread.sleep(6000)
+
+    between(Math.abs(test(0).toEpochMilli - now), 1000, 1300) shouldBe true
+    between(Math.abs(test(1).toEpochMilli - now), 2000, 2300) shouldBe true
+    between(Math.abs(test(2).toEpochMilli - now), 3000, 3300) shouldBe true
+    between(Math.abs(test(3).toEpochMilli - now), 4000, 4300) shouldBe true
+  }
+
+  "Process asStdoutBuffered" should "be executed parallel in io thread scheduler" in {
+    def between(v: Long, min: Long, max: Long) = v > min && v < max
+
+    val src: Single[Array[Byte]] = RxNuProcessBuilder.fromCommand(util.Arrays.asList("bash", "-c", "sleep 1 && date +%s%3N"))
+      .asStdOutSingle()
+
+    val decoded: Single[Instant] = src.map(b => Instant.ofEpochMilli(new String(b).trim.toLong))
+
+    val test = Collections.synchronizedList(new util.ArrayList[Instant]()).asScala
+
+    val whatToTest = decoded.subscribeOn(Schedulers.io())
+
+    val now = Instant.now().toEpochMilli
+
+    whatToTest.subscribe(s => test.append(s))
+    whatToTest.subscribe(s => test.append(s))
+    whatToTest.subscribe(s => test.append(s))
+    whatToTest.subscribe(s => test.append(s))
+    Thread.sleep(6000)
+
+    between(Math.abs(test(0).toEpochMilli - now), 1000, 1300) shouldBe true
+    between(Math.abs(test(1).toEpochMilli - now), 1000, 1300) shouldBe true
+    between(Math.abs(test(2).toEpochMilli - now), 1000, 1300) shouldBe true
+    between(Math.abs(test(3).toEpochMilli - now), 1000, 1300) shouldBe true
+  }
 
 }

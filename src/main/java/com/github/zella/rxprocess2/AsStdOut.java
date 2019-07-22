@@ -1,12 +1,11 @@
 package com.github.zella.rxprocess2;
 
-import com.github.zella.rxprocess2.errors.ProcessException;
 import com.github.zella.rxprocess2.errors.ProcessTimeoutException;
 import com.zaxxer.nuprocess.NuProcess;
-import io.reactivex.Observable;
-import io.reactivex.ObservableEmitter;
-import io.reactivex.ObservableOnSubscribe;
+import io.reactivex.*;
 
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 
 class AsStdOut {
@@ -19,10 +18,29 @@ class AsStdOut {
 
     Observable<byte[]> create(long timeout, TimeUnit timeUnit) {
         return Observable.create((ObservableOnSubscribe<byte[]>) emitter -> {
-            ColdStdoutHandler handler = new ColdStdoutHandler(emitter);
+
+            LinkedBlockingQueue<Notification<byte[]>> switchThread = new LinkedBlockingQueue<>();
+
+            ColdStdoutHandler handler = new ColdStdoutHandler(switchThread);
             pb.builder.setProcessListener(handler);
             NuProcess process = pb.builder.start();
             emitter.setCancellable(() -> process.destroy(true));
+            while (true) {
+                Notification<byte[]> n = switchThread.take();
+                if (n.isOnNext()) {
+                    emitter.onNext(n.getValue());
+
+                } else if (n.isOnComplete()) {
+                    if (!emitter.isDisposed())
+                        emitter.onComplete();
+                    break;
+                } else if (n.isOnError()) {
+                    if (!emitter.isDisposed())
+                        emitter.onError(n.getError());
+                    break;
+                }
+
+            }
         }).compose(o -> {
             if (timeout == -1)
                 return o;
@@ -32,27 +50,28 @@ class AsStdOut {
         });
     }
 
+
     static class ColdStdoutHandler extends BaseRxHandler {
 
-        final ObservableEmitter<byte[]> rxOut;
+        final BlockingQueue<Notification<byte[]>> queue;
 
-        ColdStdoutHandler(ObservableEmitter<byte[]> rxOut) {
-            this.rxOut = rxOut;
+        ColdStdoutHandler(BlockingQueue<Notification<byte[]>> queue) {
+            this.queue = queue;
         }
 
         @Override
         void onNext(byte[] value) {
-            rxOut.onNext(value);
+            queue.add(Notification.createOnNext(value));
         }
 
         @Override
         void onError(int code) {
-            if (!rxOut.isDisposed()) rxOut.onError(error(code, getErr()));
+            queue.add(Notification.createOnError(error(code, getErr())));
         }
 
         @Override
         void onSuccesfullComplete() {
-            if (!rxOut.isDisposed()) rxOut.onComplete();
+            queue.add(Notification.createOnComplete());
         }
 
     }

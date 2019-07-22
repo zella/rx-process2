@@ -3,13 +3,14 @@ package com.github.zella.rxprocess2;
 import com.github.zella.rxprocess2.errors.ProcessException;
 import com.github.zella.rxprocess2.errors.ProcessTimeoutException;
 import com.zaxxer.nuprocess.NuProcess;
-import io.reactivex.*;
-import io.reactivex.processors.ReplayProcessor;
+import io.reactivex.Observable;
+import io.reactivex.Single;
 import io.reactivex.subjects.AsyncSubject;
 import io.reactivex.subjects.PublishSubject;
-import io.reactivex.subjects.ReplaySubject;
 import org.reactivestreams.Subscriber;
 
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
@@ -35,12 +36,20 @@ public class PreparedStreams {
      */
     public Single<Exit> waitDone(long timeout, TimeUnit timeUnit) {
         return Single.<Exit>create(emitter -> {
-            handler.setEmitter(emitter);
+
+            LinkedBlockingQueue<Exit> switchThread = new LinkedBlockingQueue<>();
+
+            handler.setQueue(switchThread);
             pb.builder.setProcessListener(handler);
             NuProcess p = pb.builder.start();
             emitter.setCancellable(() -> p.destroy(true));
             startedH.onNext(p);
             startedH.onComplete();
+
+            Exit n = switchThread.take();
+            if (!emitter.isDisposed())
+                emitter.onSuccess(n);
+
             //timeout handled by rx
         }).compose(s -> {
             if (timeout == -1) return s;
@@ -91,32 +100,30 @@ public class PreparedStreams {
 
     static class HotStdoutHandler extends BaseRxHandler {
 
-        private SingleEmitter<Exit> emitter = null;
+        private BlockingQueue<Exit> queue = null;
 
         final PublishSubject<byte[]> rxOut = PublishSubject.create();
 
-        void setEmitter(SingleEmitter<Exit> emitter) {
-            this.emitter = emitter;
+        void setQueue(BlockingQueue<Exit> queue) {
+            this.queue = queue;
         }
 
         @Override
         void onNext(byte[] value) {
+            //note called on nuprocess thread
             rxOut.onNext(value);
         }
 
         @Override
         void onError(int code) {
             rxOut.onError(error(code, getErr()));
-            if (!emitter.isDisposed())
-                emitter.onSuccess(new Exit(code, new ProcessException(code, getErr())));
+            queue.add(new Exit(code, new ProcessException(code, getErr())));
         }
 
         @Override
         void onSuccesfullComplete() {
             rxOut.onComplete();
-            if (!emitter.isDisposed())
-                emitter.onSuccess(new Exit(0));
-
+            queue.add(new Exit(0));
         }
     }
 

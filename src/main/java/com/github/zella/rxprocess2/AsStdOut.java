@@ -1,5 +1,6 @@
 package com.github.zella.rxprocess2;
 
+import com.github.zella.rxprocess2.errors.ProcessException;
 import com.github.zella.rxprocess2.errors.ProcessTimeoutException;
 import com.zaxxer.nuprocess.NuProcess;
 import io.reactivex.*;
@@ -23,8 +24,18 @@ class AsStdOut {
 
             ColdStdoutHandler handler = new ColdStdoutHandler(switchThread);
             pb.builder.setProcessListener(handler);
-            NuProcess process = pb.builder.start();
-            emitter.setCancellable(() -> process.destroy(true));
+            NuProcess p = pb.builder.start();
+            emitter.setCancellable(() -> {
+                try {
+                    p.destroy(false);
+                    p.waitFor(BaseRxHandler.GRACEFULL_STOP_SECONDS, TimeUnit.SECONDS);
+                    p.destroy(true);
+                } finally {
+                    Single.timer(1, TimeUnit.SECONDS)
+                            .map(l -> switchThread.offer(Notification.createOnError(new ProcessException(-1, "Nu process callback missing, clean by rx"))))
+                            .subscribe();
+                }
+            });
             while (true) {
                 Notification<byte[]> n = switchThread.take();
                 if (n.isOnNext()) {

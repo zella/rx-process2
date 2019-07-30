@@ -42,10 +42,19 @@ public class PreparedStreams {
             handler.setQueue(switchThread);
             pb.builder.setProcessListener(handler);
             NuProcess p = pb.builder.start();
-            emitter.setCancellable(() -> p.destroy(true));
+            emitter.setCancellable(() -> {
+                try {
+                    p.destroy(false);
+                    p.waitFor(BaseRxHandler.GRACEFULL_STOP_SECONDS, TimeUnit.SECONDS);
+                    p.destroy(true);
+                } finally {
+                    Single.timer(1, TimeUnit.SECONDS)
+                            .map(l -> switchThread.offer(new Exit(-1, new ProcessException(-1, "Nu process callback missing, clean by rx"))))
+                            .subscribe();
+                }
+            });
             startedH.onNext(p);
             startedH.onComplete();
-
             Exit n = switchThread.take();
             if (!emitter.isDisposed())
                 emitter.onSuccess(n);

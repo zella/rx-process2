@@ -19,6 +19,8 @@ abstract class BaseRxHandler extends NuAbstractProcessHandler {
 
     private static int STDERR_BUFF_SIZE = Integer.getInteger("rxprocess2.stderrBuffer", 16384);
 
+    static int GRACEFULL_STOP_SECONDS = Integer.getInteger("rxprocess2.gracefullStopSeconds", 1);
+
     final ReplayProcessor<byte[]> rxIn = ReplayProcessor.create();
 
     abstract void onNext(@NonNull byte[] value);

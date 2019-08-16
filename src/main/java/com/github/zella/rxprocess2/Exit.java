@@ -13,12 +13,12 @@ public class Exit {
     public final int statusCode;
     public final Optional<ProcessException> err;
 
-    Exit(int statusCode, ProcessException err) {
+    public  Exit(int statusCode, ProcessException err) {
         this.statusCode = statusCode;
         this.err = Optional.of(err);
     }
 
-    Exit(int statusCode) {
+    public Exit(int statusCode) {
         this.statusCode = statusCode;
         this.err = Optional.empty();
     }

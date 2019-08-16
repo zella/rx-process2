@@ -3,7 +3,7 @@ package com.github.zella.rxprocess2.errors;
 /**
  * Basic class for rxprocess2 exceptions. Msg contains stderr,
  * <p>
- * Max stderr size can be set with "rxprocess2.stderrBuffer" property, default 16384 bytes.
+ * Max stderr size can be set with "rxprocess2.stderrBuffer" property, default 1024 bytes.
  * Note - buffer backed with circular fifo
  */
 public class ProcessException extends RuntimeException {

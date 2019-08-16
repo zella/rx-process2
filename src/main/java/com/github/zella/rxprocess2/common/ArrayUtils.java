@@ -1,4 +1,4 @@
-package com.github.zella.rxprocess2.etc;
+package com.github.zella.rxprocess2.common;
 
 public class ArrayUtils {
 

@@ -1,4 +1,4 @@
-package com.github.zella.rxprocess2.etc;
+package com.github.zella.rxprocess2.common;
 
 
 import java.io.IOException;
@@ -137,7 +137,7 @@ public class CircularFifoQueue<E> extends AbstractCollection<E>
      * @return this queue's size
      */
     @Override
-    public int size() {
+    public synchronized int size() {
         int size = 0;
 
         if (end < start) {
@@ -157,7 +157,7 @@ public class CircularFifoQueue<E> extends AbstractCollection<E>
      * @return true if this queue is empty
      */
     @Override
-    public boolean isEmpty() {
+    public synchronized boolean isEmpty() {
         return size() == 0;
     }
 
@@ -169,7 +169,7 @@ public class CircularFifoQueue<E> extends AbstractCollection<E>
      *
      * @return always returns {@code false}
      */
-    public boolean isFull() {
+    public synchronized boolean isFull() {
         return false;
     }
 
@@ -180,7 +180,7 @@ public class CircularFifoQueue<E> extends AbstractCollection<E>
      * @return {@code true} if the capacity limit has been reached, {@code false} otherwise
      * @since 4.1
      */
-    public boolean isAtFullCapacity() {
+    public synchronized boolean isAtFullCapacity() {
         return size() == maxElements;
     }
 
@@ -189,7 +189,7 @@ public class CircularFifoQueue<E> extends AbstractCollection<E>
      *
      * @return the maximum number of elements the collection can hold
      */
-    public int maxSize() {
+    public synchronized int maxSize() {
         return maxElements;
     }
 
@@ -197,7 +197,7 @@ public class CircularFifoQueue<E> extends AbstractCollection<E>
      * Clears this queue.
      */
     @Override
-    public void clear() {
+    public synchronized void clear() {
         full = false;
         start = 0;
         end = 0;
@@ -213,7 +213,7 @@ public class CircularFifoQueue<E> extends AbstractCollection<E>
      * @throws NullPointerException  if the given element is null
      */
     @Override
-    public boolean add(final E element) {
+    public synchronized boolean add(final E element) {
         if (null == element) {
             throw new NullPointerException("Attempted to add null object to queue");
         }
@@ -242,7 +242,7 @@ public class CircularFifoQueue<E> extends AbstractCollection<E>
      * @return the element at position {@code index}
      * @throws NoSuchElementException if the requested position is outside the range [0, size)
      */
-    public E get(final int index) {
+    public synchronized E get(final int index) {
         final int sz = size();
         if (index < 0 || index >= sz) {
             throw new NoSuchElementException(
@@ -265,12 +265,12 @@ public class CircularFifoQueue<E> extends AbstractCollection<E>
      * @throws NullPointerException  if the given element is null
      */
     @Override
-    public boolean offer(final E element) {
+    public synchronized boolean offer(final E element) {
         return add(element);
     }
 
     @Override
-    public E poll() {
+    public synchronized E poll() {
         if (isEmpty()) {
             return null;
         }
@@ -278,7 +278,7 @@ public class CircularFifoQueue<E> extends AbstractCollection<E>
     }
 
     @Override
-    public E element() {
+    public synchronized E element() {
         if (isEmpty()) {
             throw new NoSuchElementException("queue is empty");
         }
@@ -286,7 +286,7 @@ public class CircularFifoQueue<E> extends AbstractCollection<E>
     }
 
     @Override
-    public E peek() {
+    public synchronized E peek() {
         if (isEmpty()) {
             return null;
         }
@@ -294,7 +294,7 @@ public class CircularFifoQueue<E> extends AbstractCollection<E>
     }
 
     @Override
-    public E remove() {
+    public synchronized E remove() {
         if (isEmpty()) {
             throw new NoSuchElementException("queue is empty");
         }
@@ -346,7 +346,7 @@ public class CircularFifoQueue<E> extends AbstractCollection<E>
      * @return an iterator over this queue's elements
      */
     @Override
-    public Iterator<E> iterator() {
+    public synchronized Iterator<E> iterator() {
         return new Iterator<E>() {
 
             private int index = start;

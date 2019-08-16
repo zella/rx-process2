@@ -1,5 +1,6 @@
 package com.github.zella.rxprocess2
 
+
 import java.io.File
 import java.nio.charset.Charset
 import java.nio.file.Files
@@ -10,7 +11,6 @@ import java.util.concurrent.{Executors, TimeUnit}
 
 import com.github.davidmoten.rx2.Strings
 import com.github.zella.rxprocess2.errors.{ProcessException, ProcessTimeoutException}
-import com.zaxxer.nuprocess.{NuProcess, NuProcessBuilder}
 import io.reactivex._
 import io.reactivex.observers.TestObserver
 import io.reactivex.schedulers.Schedulers
@@ -18,14 +18,14 @@ import org.scalatest._
 
 import scala.collection.JavaConverters._
 
-class RxNuProcessBuilderSpec extends FlatSpec with Matchers {
+class RxJavaLangProcessBuilderSpec extends FlatSpec with Matchers {
 
-  private def init(cmd: Seq[String]): IReactiveProcessBuilder[NuProcess] = {
-    val pb = new NuProcessBuilder(cmd: _*)
+  private def init(cmd: Seq[String]): IReactiveProcessBuilder[Process] = {
+    val pb = new ProcessBuilder(cmd: _*)
     RxProcess.reactive(pb)
   }
 
-  "NuProcess asWaitDone" should "be completed" in {
+  "Process asWaitDone" should "be completed" in {
 
     val observer = new TestObserver[Exit]
 
@@ -39,7 +39,7 @@ class RxNuProcessBuilderSpec extends FlatSpec with Matchers {
     observer.assertResult(new Exit(0))
   }
 
-  "NuProcess asWaitDone with wrong process" should "be completed with non zero exit code and captured stderr" in {
+  "Process asWaitDone with wrong process" should "be completed with non zero exit code and captured stderr" in {
 
     val observer = new TestObserver[Exit]
 
@@ -56,7 +56,7 @@ class RxNuProcessBuilderSpec extends FlatSpec with Matchers {
     observer.values().get(0).err.get().getMessage shouldBe "foo"
   }
 
-  "NuProcess asStdoutBuffered" should "be completed with collected stdout" in {
+  "Process asStdoutBuffered" should "be completed with collected stdout" in {
 
     val observer = new TestObserver[String]
 
@@ -72,7 +72,7 @@ class RxNuProcessBuilderSpec extends FlatSpec with Matchers {
     observer.assertResult("hello world")
   }
 
-  "NuProcess asStdout with wrong process" should "be failed with exception and captured stderr" in {
+  "Process asStdout with wrong process" should "be failed with exception and captured stderr" in {
 
     val observer = new TestObserver[String]
 
@@ -90,7 +90,7 @@ class RxNuProcessBuilderSpec extends FlatSpec with Matchers {
   }
 
 
-  "NuProcess asStdout" should "be completed with stdout chunks" in {
+  "Process asStdout" should "be completed with stdout chunks" in {
 
     val observer = new TestObserver[String]
 
@@ -109,13 +109,14 @@ class RxNuProcessBuilderSpec extends FlatSpec with Matchers {
 
   //TODO test circular buffer error
 
-   "NuProcess asStdInOut with input" should "be completed with input chunks" in {
+  //STOP here
+  "Process asStdInOut with input" should "be completed with input chunks" in {
 
-    val started = new TestObserver[NuProcess]
+    val started = new TestObserver[Process]
     val stdout = new TestObserver[String]
     val done = new TestObserver[Exit]
 
-    val src: IReactiveProcess[NuProcess] = init(Seq("cat")).biDirectional()
+    val src: IReactiveProcess[Process] = init(Seq("cat")).biDirectional()
 
     src.started().subscribe(started)
     Strings.decode(src.stdOut().toFlowable(BackpressureStrategy.BUFFER), Charset.defaultCharset()).toObservable.subscribe(stdout)
@@ -124,7 +125,7 @@ class RxNuProcessBuilderSpec extends FlatSpec with Matchers {
       .subscribe(done)
 
     started.await()
-    started.values().get(0).isRunning shouldBe true
+    started.values().get(0).isAlive shouldBe true
 
     src.stdIn().onNext("hello".getBytes)
     Thread.sleep(1000)
@@ -137,7 +138,7 @@ class RxNuProcessBuilderSpec extends FlatSpec with Matchers {
     done.assertResult(new Exit(0))
 
     started.assertNoErrors()
-    started.values().get(0).isRunning shouldBe false
+    started.values().get(0).isAlive shouldBe false
     started.assertComplete()
 
     stdout.assertNoErrors()
@@ -177,7 +178,7 @@ class RxNuProcessBuilderSpec extends FlatSpec with Matchers {
   }
 
 
-  "NuProcess asStdoutBuffered with long output" should "be completed with collected stdout" in {
+  "Process asStdoutBuffered with long output" should "be completed with collected stdout" in {
 
     val testFile = new File(getClass.getClassLoader.getResource("long513339b.txt").getFile)
 
@@ -195,9 +196,9 @@ class RxNuProcessBuilderSpec extends FlatSpec with Matchers {
     observer.assertResult(new String(Files.readAllBytes(testFile.toPath), "UTF-8"))
   }
 
-  "NuProcess asStdInOut with input" should "read early passed (before start) stdin" in {
+  "Process asStdInOut with input" should "read early passed (before start) stdin" in {
 
-    val started = new TestObserver[NuProcess]
+    val started = new TestObserver[Process]
     val stdout = new TestObserver[String]
     val done = new TestObserver[Exit]
 
@@ -222,7 +223,7 @@ class RxNuProcessBuilderSpec extends FlatSpec with Matchers {
     stdout.assertResult("hello", "world")
   }
 
-  "NuProcess asStdoutBuffered" should "be executed serially in single thread scheduler" in {
+  "Process asStdoutBuffered" should "be executed serially in single thread scheduler" in {
 
     def between(v: Long, min: Long, max: Long) = v > min && v < max
 
@@ -250,7 +251,7 @@ class RxNuProcessBuilderSpec extends FlatSpec with Matchers {
     between(Math.abs(test(3).toEpochMilli - now), 4000, 4300) shouldBe true
   }
 
-  "NuProcess asStdoutBuffered" should "be executed parallel in io thread scheduler" in {
+  "Process asStdoutBuffered" should "be executed parallel in io thread scheduler" in {
     def between(v: Long, min: Long, max: Long) = v > min && v < max
 
     val src: Single[Array[Byte]] = init(Seq("bash", "-c", "sleep 1 && date +%s%3N")).asStdOutSingle()
@@ -275,7 +276,7 @@ class RxNuProcessBuilderSpec extends FlatSpec with Matchers {
     between(Math.abs(test(3).toEpochMilli - now), 1000, 1300) shouldBe true
   }
 
-  "NuProcess asStdErrOut" should "be completed with stdout and stderr chunks" in {
+  "Process asStdErrOut" should "be completed with stdout and stderr chunks" in {
 
     val observer = new TestObserver[ProcessChunk]
 

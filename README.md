@@ -1,4 +1,4 @@
-**Rx java2 wrpapper for NuProcess** - Low-overhead, non-blocking I/O, external Process implementation for Java. 
+**Rx-java2 wrapper for subprocess execution** - Support java.lang.Process and com.zaxxer.nuprocess.NuProcess. 
 
 ### Usage:
 Add dependency:
@@ -6,36 +6,38 @@ Add dependency:
 	<dependency>
 	    <groupId>com.github.zella</groupId>
 	    <artifactId>rx-process2</artifactId>
-	    <version>0.1.0-RC5</version>
+	    <version>0.2.0-BETA1</version>
 	</dependency>
 
 
 **Build process**:
 
-	RxNuProcessBuilder builder = RxNuProcessBuilder.fromCommand(Arrays.asList("cat"))
-		.withCwd(...)
-		.withEnv(...);
-		
+    ProcessBuilder jBuilder = ...; //or NuProcessBuilder, NuProcess 
+
+    IReactiveProcessBuilder<Process> builder = RxProcess.reactive(jBuilder);
 
 **Here multiple variants of process execution**:
 
-Returns exit code with optional exception with captured stderr:
+    Observable<ProcessChunk> stdOutErr = builder.asStdErrOut();
+    
+    Observable<byte[]> stdout = builder.asStdOut();
 
-	Single<Exit> done = builder.asWaitDone();
+    Single<byte[]> stdoutSingle = builder.asStdOutSingle();
 
-Returns stdout stream, stream - cold, so subscription start the process:	
+    Single<Exit> waitExit = builder.asWaitDone();
 
-	Observable<byte[]> stdout = builder.asStdOut();
-	
-Returns single stdout:
 
-	Single<byte[]> stdout = builder.asStdOutSingle();
-	
-Returns set of "callback "streams, all streams except waitDone - hot. Subscription to `waitDone`	strart the process. You can push to stdin. More on javadoc or see tests:
 
-	PreparedStreams streams = builder.asStdInOut();
+**Bidirectional communication**
 
-	Single<NuProcess> started = streams.started();
-	Single<Exit> done = streams.waitDone();
-	Observable<byte[]> stdout = streams.stdOut();
-	Subscriber<byte[]> stdin = streams.stdIn();
+    IReactiveProcess<Process> bi = builder.biDirectional();
+    
+    Single<Process> started = bi.started();
+    Subscriber<byte[]> stdin = bi.stdIn();
+    Observable<byte[]> stdoutBi = bi.stdOut();
+    Observable<ProcessChunk> stdoutErrBi = bi.stdOutErr();
+    //Cold subscription, start the process
+    Single<Exit> waitExitBi = bi.waitDone();
+    //write to stdin
+    stdin.onNext("hello".getBytes());
+

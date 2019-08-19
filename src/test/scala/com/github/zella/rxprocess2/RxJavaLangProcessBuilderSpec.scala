@@ -281,7 +281,7 @@ class RxJavaLangProcessBuilderSpec extends FlatSpec with Matchers {
     val observer = new TestObserver[ProcessChunk]
 
     val src: Observable[ProcessChunk] =
-      init(Seq("bash", "-c", "printf foo && sleep 1 && printf bar >>/dev/stderr && sleep 1 && printf dar")).asStdErrOut()
+      init(Seq("bash", "-c", "printf foo && sleep 1 && printf bar >>/dev/stderr && sleep 1 && printf dar && sleep 0.1")).asStdErrOut()
 
     src.subscribeOn(Schedulers.io).subscribe(observer)
 

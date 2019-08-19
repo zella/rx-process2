@@ -253,7 +253,7 @@ class RxNuProcessBuilderSpec extends FlatSpec with Matchers {
   "NuProcess asStdoutBuffered" should "be executed parallel in io thread scheduler" in {
     def between(v: Long, min: Long, max: Long) = v > min && v < max
 
-    val src: Single[Array[Byte]] = init(Seq("bash", "-c", "sleep 1 && date +%s%3N")).asStdOutSingle()
+    val src: Single[Array[Byte]] = init(Seq("bash", "-c", "sleep 1 && date +%s%3N && sleep 1")).asStdOutSingle()
 
     val decoded: Single[Instant] = src.map(b => Instant.ofEpochMilli(new String(b).trim.toLong))
 
@@ -280,7 +280,7 @@ class RxNuProcessBuilderSpec extends FlatSpec with Matchers {
     val observer = new TestObserver[ProcessChunk]
 
     val src: Observable[ProcessChunk] =
-      init(Seq("bash", "-c", "printf foo && sleep 1 && printf bar >>/dev/stderr && sleep 1 && printf dar")).asStdErrOut()
+      init(Seq("bash", "-c", "printf foo && sleep 1 && printf bar >>/dev/stderr && sleep 1 && printf dar && sleep 0.1")).asStdErrOut()
 
     src.subscribeOn(Schedulers.io).subscribe(observer)
 

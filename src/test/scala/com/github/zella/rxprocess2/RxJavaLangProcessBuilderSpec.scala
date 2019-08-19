@@ -60,7 +60,7 @@ class RxJavaLangProcessBuilderSpec extends FlatSpec with Matchers {
 
     val observer = new TestObserver[String]
 
-    val src: Single[Array[Byte]] = init(Seq("echo", "hello world")).asStdOutSingle()
+    val src: Single[Array[Byte]] = init(Seq("bash", "-c", "echo hello world && sleep 0.1")).asStdOutSingle()
 
     val decoded: Single[String] = src.map(b => new String(b))
 
@@ -227,7 +227,7 @@ class RxJavaLangProcessBuilderSpec extends FlatSpec with Matchers {
 
     val sc = Schedulers.from(Executors.newSingleThreadExecutor())
 
-    val src: Single[Array[Byte]] = init(Seq("bash", "-c", "sleep 1 && date +%s%3N")).asStdOutSingle().subscribeOn(sc)
+    val src: Single[Array[Byte]] = init(Seq("bash", "-c", "sleep 1 && date +%s%3N && sleep 0.01")).asStdOutSingle().subscribeOn(sc)
 
     val decoded: Single[Instant] = src.map(b => Instant.ofEpochMilli(new String(b).trim.toLong))
 
@@ -252,7 +252,7 @@ class RxJavaLangProcessBuilderSpec extends FlatSpec with Matchers {
   "Process asStdoutBuffered" should "be executed parallel in io thread scheduler" in {
     def between(v: Long, min: Long, max: Long) = v > min && v < max
 
-    val src: Single[Array[Byte]] = init(Seq("bash", "-c", "sleep 1 && date +%s%3N")).asStdOutSingle()
+    val src: Single[Array[Byte]] = init(Seq("bash", "-c", "sleep 1 && date +%s%3N && sleep 0.1")).asStdOutSingle()
 
     val decoded: Single[Instant] = src.map(b => Instant.ofEpochMilli(new String(b).trim.toLong))
 

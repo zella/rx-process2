@@ -21,7 +21,7 @@ ThisBuild / developers := List(
   )
 )
 
-ThisBuild / credentials += Credentials("Sonatype Nexus Repository Manager", "oss.sonatype.org", sys.env("SONATYPE_USER"), sys.env("SONATYPE_PASS"))
+ThisBuild / credentials += Credentials("Sonatype Nexus Repository Manager", "oss.sonatype.org","a","b")
 
 ThisBuild / description := "rx-java2 wrapper for NuProcess"
 ThisBuild / licenses := List("MIT" -> new URL("https://opensource.org/licenses/MIT"))

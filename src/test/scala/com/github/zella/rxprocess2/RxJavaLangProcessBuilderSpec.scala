@@ -43,7 +43,7 @@ class RxJavaLangProcessBuilderSpec extends FlatSpec with Matchers {
 
     val observer = new TestObserver[Exit]
 
-    val src: Single[Exit] = init(Seq("bash", "-c", "printf foo >>/dev/stderr && exit 1"))
+    val src: Single[Exit] = init(Seq("bash", "-c", "printf foo >>/dev/stderr && sleep 0.1 && exit 1"))
       .asWaitDone()
 
     src.subscribeOn(Schedulers.io).subscribe(observer)
@@ -77,7 +77,7 @@ class RxJavaLangProcessBuilderSpec extends FlatSpec with Matchers {
     val observer = new TestObserver[String]
 
     val src: Observable[Array[Byte]] =
-      init(Seq("bash", "-c", "printf foo && sleep 1 && printf bar >>/dev/stderr && exit 1")).asStdOut()
+      init(Seq("bash", "-c", "printf foo && sleep 1 && printf bar >>/dev/stderr && sleep 0.1 && exit 1")).asStdOut()
     val decoded: Observable[String] = Strings.decode(src.toFlowable(BackpressureStrategy.BUFFER), Charset.defaultCharset()).toObservable
 
     decoded.subscribeOn(Schedulers.io).subscribe(observer)

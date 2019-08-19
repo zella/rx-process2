@@ -9,7 +9,7 @@ import java.util
 import java.util.Collections
 import java.util.concurrent.{Executors, TimeUnit}
 
-import com.github.davidmoten.rx2.Strings
+import com.github.davidmoten.rx2.{Bytes, Strings}
 import com.github.zella.rxprocess2.errors.{ProcessException, ProcessTimeoutException}
 import io.reactivex._
 import io.reactivex.observers.TestObserver
@@ -43,7 +43,7 @@ class RxJavaLangProcessBuilderSpec extends FlatSpec with Matchers {
 
     val observer = new TestObserver[Exit]
 
-    val src: Single[Exit] = init(Seq("bash", "-c", "printf foo >>/dev/stderr && sleep 0.1 && exit 1"))
+    val src: Single[Exit] = init(Seq("python3", "-c", "import sys; from time import sleep; print('foo', end='', file=sys.stderr, flush=True); sleep(0.1); sys.exit(1)"))
       .asWaitDone()
 
     src.subscribeOn(Schedulers.io).subscribe(observer)
@@ -60,7 +60,7 @@ class RxJavaLangProcessBuilderSpec extends FlatSpec with Matchers {
 
     val observer = new TestObserver[String]
 
-    val src: Single[Array[Byte]] = init(Seq("printf", "hello world")).asStdOutSingle()
+    val src: Single[Array[Byte]] = init(Seq("echo", "hello world")).asStdOutSingle()
 
     val decoded: Single[String] = src.map(b => new String(b))
 
@@ -69,7 +69,7 @@ class RxJavaLangProcessBuilderSpec extends FlatSpec with Matchers {
     observer.await(5, TimeUnit.SECONDS)
     observer.assertNoErrors()
     observer.assertComplete()
-    observer.assertResult("hello world")
+    observer.assertResult("hello world\n")
   }
 
   "Process asStdout with wrong process" should "be failed with exception and captured stderr" in {
@@ -95,7 +95,7 @@ class RxJavaLangProcessBuilderSpec extends FlatSpec with Matchers {
     val observer = new TestObserver[String]
 
     val src: Observable[Array[Byte]] =
-      init(Seq("bash", "-c", "printf hello && sleep 1 && printf world")).asStdOut()
+      init(Seq("bash", "-c", "echo hello && sleep 1 && echo world && sleep 1")).asStdOut()
 
     val decoded: Observable[String] = Strings.decode(src.toFlowable(BackpressureStrategy.BUFFER), Charset.defaultCharset()).toObservable
 
@@ -104,12 +104,9 @@ class RxJavaLangProcessBuilderSpec extends FlatSpec with Matchers {
     observer.await(5, TimeUnit.SECONDS)
     observer.assertNoErrors()
     observer.assertComplete()
-    observer.assertResult("hello", "world")
+    observer.assertResult("hello\n", "world\n")
   }
 
-  //TODO test circular buffer error
-
-  //STOP here
   "Process asStdInOut with input" should "be completed with input chunks" in {
 
     val started = new TestObserver[Process]
@@ -130,6 +127,7 @@ class RxJavaLangProcessBuilderSpec extends FlatSpec with Matchers {
     src.stdIn().onNext("hello".getBytes)
     Thread.sleep(1000)
     src.stdIn().onNext("world".getBytes)
+    Thread.sleep(100)
     src.stdIn().onComplete()
 
     done.await(5, TimeUnit.SECONDS)
@@ -295,21 +293,21 @@ class RxJavaLangProcessBuilderSpec extends FlatSpec with Matchers {
     )
   }
 
-//  "Process asStdout" should "be completed with last part of error" in {
-//
-//    System.setProperty("rxprocess2.stderrBuffer", "4")
-//
-//    val observer = new TestObserver[String]
-//
-//    val src: Observable[Array[Byte]] =
-//      init(Seq("bash", "-c", "printf 12334567 >>/dev/stderr && printf 8 >>/dev/stderr && exit 1")).asStdOut()
-//    val decoded: Observable[String] = Strings.decode(src.toFlowable(BackpressureStrategy.BUFFER), Charset.defaultCharset()).toObservable
-//
-//    decoded.subscribeOn(Schedulers.io).subscribe(observer)
-//
-//    observer.await(3, TimeUnit.SECONDS)
-//    observer.assertError(classOf[ProcessException])
-//    observer.errors().get(0).getMessage shouldBe "5678"
-//  }
+  //  "Process asStdout" should "be completed with last part of error" in {
+  //
+  //    System.setProperty("rxprocess2.stderrBuffer", "4")
+  //
+  //    val observer = new TestObserver[String]
+  //
+  //    val src: Observable[Array[Byte]] =
+  //      init(Seq("bash", "-c", "printf 12334567 >>/dev/stderr && printf 8 >>/dev/stderr && exit 1")).asStdOut()
+  //    val decoded: Observable[String] = Strings.decode(src.toFlowable(BackpressureStrategy.BUFFER), Charset.defaultCharset()).toObservable
+  //
+  //    decoded.subscribeOn(Schedulers.io).subscribe(observer)
+  //
+  //    observer.await(3, TimeUnit.SECONDS)
+  //    observer.assertError(classOf[ProcessException])
+  //    observer.errors().get(0).getMessage shouldBe "5678"
+  //  }
 
 }

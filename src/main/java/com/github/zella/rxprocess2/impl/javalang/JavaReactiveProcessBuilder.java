@@ -1,14 +1,14 @@
 package com.github.zella.rxprocess2.impl.javalang;
 
-import com.github.davidmoten.rx2.Bytes;
-import com.github.zella.rxprocess2.errors.ProcessException;
-import com.github.zella.rxprocess2.errors.ProcessTimeoutException;
-import com.github.zella.rxprocess2.common.ArrayUtils;
-import com.github.zella.rxprocess2.common.CircularFifoQueue;
+import com.github.zella.rxprocess2.BaseReactiveProcessBuilder;
 import com.github.zella.rxprocess2.Exit;
 import com.github.zella.rxprocess2.IReactiveProcess;
 import com.github.zella.rxprocess2.ProcessChunk;
-import com.github.zella.rxprocess2.BaseReactiveProcessBuilder;
+import com.github.zella.rxprocess2.common.ArrayUtils;
+import com.github.zella.rxprocess2.common.CircularFifoQueue;
+import com.github.zella.rxprocess2.common.RxUtils;
+import com.github.zella.rxprocess2.errors.ProcessException;
+import com.github.zella.rxprocess2.errors.ProcessTimeoutException;
 import io.reactivex.Observable;
 import io.reactivex.Single;
 import io.reactivex.functions.Cancellable;
@@ -46,7 +46,7 @@ public class JavaReactiveProcessBuilder extends BaseReactiveProcessBuilder<Proce
 
             CountDownLatch waitOut = new CountDownLatch(1);
 
-            Bytes.from(stderr)
+            RxUtils.bytes(stderr)
                     .doFinally(waitOut::countDown)
                     .subscribeOn(Schedulers.newThread())
                     .subscribe(b -> {
@@ -116,7 +116,7 @@ public class JavaReactiveProcessBuilder extends BaseReactiveProcessBuilder<Proce
 
                     emitter.setCancellable(destroyProcess(process));
 
-                    Bytes.from(stdout)
+                    RxUtils.bytes(stdout)
                             .doFinally(waitOut::countDown)
                             .subscribeOn(Schedulers.newThread())
                             .subscribe(b -> {
@@ -127,7 +127,7 @@ public class JavaReactiveProcessBuilder extends BaseReactiveProcessBuilder<Proce
                             }, () -> {
                             });
 
-                    Bytes.from(stderr)
+                    RxUtils.bytes(stderr)
                             .doFinally(waitOut::countDown)
                             .subscribeOn(Schedulers.newThread())
                             .subscribe(b -> {

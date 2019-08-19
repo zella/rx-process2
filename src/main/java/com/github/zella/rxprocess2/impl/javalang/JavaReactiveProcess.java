@@ -1,12 +1,12 @@
 package com.github.zella.rxprocess2.impl.javalang;
 
-import com.github.davidmoten.rx2.Bytes;
+import com.github.zella.rxprocess2.BaseReactiveProcess;
 import com.github.zella.rxprocess2.Exit;
+import com.github.zella.rxprocess2.ProcessChunk;
+import com.github.zella.rxprocess2.common.ArrayUtils;
+import com.github.zella.rxprocess2.common.RxUtils;
 import com.github.zella.rxprocess2.errors.ProcessException;
 import com.github.zella.rxprocess2.errors.ProcessTimeoutException;
-import com.github.zella.rxprocess2.common.ArrayUtils;
-import com.github.zella.rxprocess2.ProcessChunk;
-import com.github.zella.rxprocess2.BaseReactiveProcess;
 import io.reactivex.Single;
 import io.reactivex.functions.Cancellable;
 import io.reactivex.schedulers.Schedulers;
@@ -18,7 +18,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 import static com.github.zella.rxprocess2.RxProcessConfig.GRACEFULL_STOP_SECONDS;
-import static com.github.zella.rxprocess2.RxProcessConfig.STDERR_BUFF_SIZE;
 
 public class JavaReactiveProcess extends BaseReactiveProcess<Process> {
 
@@ -75,7 +74,7 @@ public class JavaReactiveProcess extends BaseReactiveProcess<Process> {
                                 }
                             });
 
-            Bytes.from(stderr)
+            RxUtils.bytes(stderr)
                     .doFinally(waitOut::countDown)
                     .subscribeOn(Schedulers.newThread())
                     .subscribe(b -> {
@@ -92,7 +91,7 @@ public class JavaReactiveProcess extends BaseReactiveProcess<Process> {
 
                     });
 
-            Bytes.from(stdout)
+            RxUtils.bytes(stdout)
                     .doFinally(waitOut::countDown)
                     .subscribeOn(Schedulers.newThread())
                     .subscribe(b -> {

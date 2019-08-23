@@ -22,6 +22,8 @@ import java.util.concurrent.TimeUnit;
  */
 public interface IReactiveProcessBuilder<T> {
 
+    IReactiveProcessBuilder<T> withStdin(byte[] data);
+
     /**
      * Wait until process exits, Non zero exit code will be captured in {@link Exit}
      *

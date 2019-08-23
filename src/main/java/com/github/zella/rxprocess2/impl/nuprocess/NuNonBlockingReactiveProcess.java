@@ -45,15 +45,18 @@ public class NuNonBlockingReactiveProcess extends BaseReactiveProcess<NuProcess>
 
                 @Override
                 void onComplete(int exitValue) {
-                    stdoutStdErrSubject.onComplete();
-                    if (!emitter.isDisposed()) {
+                    synchronized (emitter) {
                         if (exitValue != 0) {
-                            synchronized (emitter) {
-                                String err = new String(ArrayUtils.toPrimitive(stderrBuffer.toArray(new Byte[0])));
+                            String err = new String(ArrayUtils.toPrimitive(stderrBuffer.toArray(new Byte[0])));
+                            stdoutStdErrSubject.onError(new ProcessException(exitValue, err));
+                            if ((!emitter.isDisposed())) {
                                 emitter.onSuccess(new Exit(exitValue, new ProcessException(exitValue, err)));
                             }
                         } else {
-                            emitter.onSuccess(new Exit(0));
+                            stdoutStdErrSubject.onComplete();
+                            if ((!emitter.isDisposed())) {
+                                emitter.onSuccess(new Exit(0));
+                            }
                         }
                     }
                 }
@@ -61,27 +64,17 @@ public class NuNonBlockingReactiveProcess extends BaseReactiveProcess<NuProcess>
                 @Override
                 void started(NuProcess nuProcess) {
                     stdinProcessor.subscribe(
-                            bytes -> {
-                                synchronized (emitter) {
-                                    nuProcess.writeStdin(ByteBuffer.wrap(bytes));
-                                }
-                            },
+                            bytes -> nuProcess.writeStdin(ByteBuffer.wrap(bytes)),
                             err -> nuProcess.destroy(true),
-                            () -> {
-                                synchronized (emitter) {
-                                    nuProcess.closeStdin(false);
-                                }
-                            });
+                            () -> nuProcess.closeStdin(false));
                 }
 
                 @Override
                 void stdoutClosed() {
-
                 }
 
                 @Override
                 void stderrClosed() {
-
                 }
             });
 
@@ -89,6 +82,7 @@ public class NuNonBlockingReactiveProcess extends BaseReactiveProcess<NuProcess>
 
             startedSubject.onNext(process);
             startedSubject.onComplete();
+            //TODO close emitter here!
             emitter.setCancellable(() -> process.destroy(true));
         }).compose(s -> {
             //TODO revision

@@ -13,6 +13,7 @@ import com.zaxxer.nuprocess.NuProcessBuilder;
 import io.reactivex.Observable;
 import io.reactivex.Single;
 
+import java.nio.ByteBuffer;
 import java.util.Collection;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -49,6 +50,7 @@ public class NuNonBlockingReactiveProcessBuilder extends BaseReactiveProcessBuil
                 void onComplete(int exitValue) {
                     //ensure it calls
                     if (!emitter.isDisposed()) {
+                        //TODO exit value grab as atomic int
                         if (exitValue != 0) {
                             synchronized (emitter) {
                                 String err = new String(ArrayUtils.toPrimitive(stderrBuffer.toArray(new Byte[0])));
@@ -62,6 +64,10 @@ public class NuNonBlockingReactiveProcessBuilder extends BaseReactiveProcessBuil
 
                 @Override
                 void started(NuProcess nuProcess) {
+                    if (stdin.length > 0) {
+                        nuProcess.writeStdin(ByteBuffer.wrap(stdin));
+                        nuProcess.closeStdin(false);
+                    }
                     //TODO ensure it calls in pair with onComplete
                 }
 
@@ -75,7 +81,7 @@ public class NuNonBlockingReactiveProcessBuilder extends BaseReactiveProcessBuil
             });
 
             NuProcess process = builder.start();
-
+            //TODO close emitter here!
             emitter.setCancellable(() -> process.destroy(true));
         }).compose(s -> {
             //TODO revision
@@ -121,6 +127,10 @@ public class NuNonBlockingReactiveProcessBuilder extends BaseReactiveProcessBuil
 
                 @Override
                 void started(NuProcess nuProcess) {
+                    if (stdin.length > 0) {
+                        nuProcess.writeStdin(ByteBuffer.wrap(stdin));
+                        nuProcess.closeStdin(false);
+                    }
                 }
 
                 @Override

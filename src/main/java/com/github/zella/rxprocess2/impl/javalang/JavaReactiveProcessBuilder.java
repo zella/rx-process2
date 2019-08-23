@@ -15,6 +15,7 @@ import io.reactivex.functions.Cancellable;
 import io.reactivex.schedulers.Schedulers;
 
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.Collection;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -59,7 +60,16 @@ public class JavaReactiveProcessBuilder extends BaseReactiveProcessBuilder<Proce
                     }, () -> {
                     });
 
-            waitOut.await(timeout, timeUnit);
+            if (stdin.length > 0) {
+                OutputStream procStdin = process.getOutputStream();
+                procStdin.write(stdin);
+                procStdin.close();
+            }
+
+            if (timeout != -1)
+                waitOut.await(timeout, timeUnit);
+            else
+                waitOut.await();
 
             int exitValue = process.waitFor();
 
@@ -141,8 +151,16 @@ public class JavaReactiveProcessBuilder extends BaseReactiveProcessBuilder<Proce
                             }, () -> {
                             });
 
+                    if (stdin.length > 0) {
+                        OutputStream procStdin = process.getOutputStream();
+                        procStdin.write(stdin);
+                        procStdin.close();
+                    }
 
-                    waitOut.await(timeout, timeUnit);
+                    if (timeout != -1)
+                        waitOut.await(timeout, timeUnit);
+                    else
+                        waitOut.await();
 
                     int exitValue = process.waitFor();
 

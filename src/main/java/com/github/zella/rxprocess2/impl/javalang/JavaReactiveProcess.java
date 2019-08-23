@@ -62,17 +62,11 @@ public class JavaReactiveProcess extends BaseReactiveProcess<Process> {
             stdinProcessor
                     .subscribeOn(Schedulers.newThread())
                     .subscribe(bytes -> {
-                                synchronized (emitter) {
-                                    stdin.write(bytes);
-                                    stdin.flush();
-                                }
+                                stdin.write(bytes);
+                                stdin.flush();
                             },
                             err -> process.destroyForcibly(),
-                            () -> {
-                                synchronized (emitter) {
-                                    stdin.close();
-                                }
-                            });
+                            stdin::close);
 
             RxUtils.bytes(stderr)
                     .doFinally(waitOut::countDown)
@@ -102,20 +96,25 @@ public class JavaReactiveProcess extends BaseReactiveProcess<Process> {
                     }, () -> {
                     });
 
-            waitOut.await(timeout, timeUnit);
+            if (timeout != -1)
+                waitOut.await(timeout, timeUnit);
+            else
+                waitOut.await();
+
 
             int exitValue = process.waitFor();
-
-            stdoutStdErrSubject.onComplete();
-
-            if (!emitter.isDisposed()) {
+            synchronized (emitter) {
                 if (exitValue != 0) {
-                    synchronized (emitter) {
-                        String err = new String(ArrayUtils.toPrimitive(stderrBuffer.toArray(new Byte[0])));
+                    String err = new String(ArrayUtils.toPrimitive(stderrBuffer.toArray(new Byte[0])));
+                    stdoutStdErrSubject.onError(new ProcessException(exitValue, err));
+                    if ((!emitter.isDisposed())) {
                         emitter.onSuccess(new Exit(exitValue, new ProcessException(exitValue, err)));
                     }
                 } else {
-                    emitter.onSuccess(new Exit(0));
+                    stdoutStdErrSubject.onComplete();
+                    if ((!emitter.isDisposed())) {
+                        emitter.onSuccess(new Exit(0));
+                    }
                 }
             }
         }).compose(s -> {

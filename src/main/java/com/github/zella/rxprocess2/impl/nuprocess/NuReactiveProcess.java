@@ -9,6 +9,7 @@ import com.github.zella.rxprocess2.BaseReactiveProcess;
 import com.zaxxer.nuprocess.NuProcess;
 import com.zaxxer.nuprocess.NuProcessBuilder;
 import io.reactivex.Single;
+import io.reactivex.schedulers.Schedulers;
 
 import java.nio.ByteBuffer;
 import java.util.concurrent.TimeUnit;
@@ -44,33 +45,22 @@ public class NuReactiveProcess extends BaseReactiveProcess<NuProcess> {
 
                 @Override
                 void onComplete(int code) {
-
                 }
 
                 @Override
                 void started(NuProcess nuProcess) {
                     stdinProcessor.subscribe(
-                            bytes -> {
-                                synchronized (emitter) {
-                                    nuProcess.writeStdin(ByteBuffer.wrap(bytes));
-                                }
-                            },
+                            bytes -> nuProcess.writeStdin(ByteBuffer.wrap(bytes)),
                             err -> nuProcess.destroy(true),
-                            () -> {
-                                synchronized (emitter) {
-                                    nuProcess.closeStdin(false);
-                                }
-                            });
+                            () -> nuProcess.closeStdin(false));
                 }
 
                 @Override
                 void stdoutClosed() {
-
                 }
 
                 @Override
                 void stderrClosed() {
-
                 }
             });
 
@@ -95,20 +85,20 @@ public class NuReactiveProcess extends BaseReactiveProcess<NuProcess> {
 
             //INFINITY
             int exitValue = process.waitFor(0, TimeUnit.SECONDS);
-
-            stdoutStdErrSubject.onComplete();
-
-            if (!emitter.isDisposed()) {
+            synchronized (emitter) {
                 if (exitValue != 0) {
-                    synchronized (emitter) {
-                        String err = new String(ArrayUtils.toPrimitive(stderrBuffer.toArray(new Byte[0])));
+                    String err = new String(ArrayUtils.toPrimitive(stderrBuffer.toArray(new Byte[0])));
+                    stdoutStdErrSubject.onError(new ProcessException(exitValue, err));
+                    if ((!emitter.isDisposed())) {
                         emitter.onSuccess(new Exit(exitValue, new ProcessException(exitValue, err)));
                     }
                 } else {
-                    emitter.onSuccess(new Exit(0));
+                    stdoutStdErrSubject.onComplete();
+                    if ((!emitter.isDisposed())) {
+                        emitter.onSuccess(new Exit(0));
+                    }
                 }
             }
-
         }).compose(s -> {
             //TODO revision
             if (timeout == -1) return s;

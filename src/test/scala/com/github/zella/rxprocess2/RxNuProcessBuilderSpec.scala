@@ -294,21 +294,21 @@ class RxNuProcessBuilderSpec extends FlatSpec with Matchers {
     )
   }
 
-//  "Process asStdout" should "be completed with last part of error" in {
-//
-//    System.setProperty("rxprocess2.stderrBuffer", "4")
-//
-//    val observer = new TestObserver[String]
-//
-//    val src: Observable[Array[Byte]] =
-//      init(Seq("bash", "-c", "printf 12334567 >>/dev/stderr && printf 8 >>/dev/stderr && exit 1")).asStdOut()
-//    val decoded: Observable[String] = Strings.decode(src.toFlowable(BackpressureStrategy.BUFFER), Charset.defaultCharset()).toObservable
-//
-//    decoded.subscribeOn(Schedulers.io).subscribe(observer)
-//
-//    observer.await(3, TimeUnit.SECONDS)
-//    observer.assertError(classOf[ProcessException])
-//    observer.errors().get(0).getMessage shouldBe "5678"
-//  }
+  "NuProcess asStdout with stdin" should "be completed with stdout chunks" in {
+
+    val observer = new TestObserver[String]
+
+    val src: Observable[Array[Byte]] =
+      init(Seq("cat")).withStdin("hello worlds".getBytes).asStdOut()
+
+    val decoded: Observable[String] = Strings.decode(src.toFlowable(BackpressureStrategy.BUFFER), Charset.defaultCharset()).toObservable
+
+    decoded.subscribeOn(Schedulers.io).subscribe(observer)
+
+    observer.await(5, TimeUnit.SECONDS)
+    observer.assertNoErrors()
+    observer.assertComplete()
+    observer.assertResult("hello worlds")
+  }
 
 }

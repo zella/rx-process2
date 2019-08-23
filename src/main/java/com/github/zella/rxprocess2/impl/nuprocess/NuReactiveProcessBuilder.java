@@ -13,6 +13,7 @@ import com.zaxxer.nuprocess.NuProcessBuilder;
 import io.reactivex.Observable;
 import io.reactivex.Single;
 
+import java.nio.ByteBuffer;
 import java.util.Collection;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -51,6 +52,10 @@ public class NuReactiveProcessBuilder extends BaseReactiveProcessBuilder<NuProce
 
                 @Override
                 void started(NuProcess nuProcess) {
+                    if (stdin.length > 0) {
+                        nuProcess.writeStdin(ByteBuffer.wrap(stdin));
+                        nuProcess.closeStdin(false);
+                    }
                 }
 
                 @Override
@@ -126,6 +131,10 @@ public class NuReactiveProcessBuilder extends BaseReactiveProcessBuilder<NuProce
 
                 @Override
                 void started(NuProcess nuProcess) {
+                    if (stdin.length > 0) {
+                        nuProcess.writeStdin(ByteBuffer.wrap(stdin));
+                        nuProcess.closeStdin(false);
+                    }
                 }
 
                 @Override

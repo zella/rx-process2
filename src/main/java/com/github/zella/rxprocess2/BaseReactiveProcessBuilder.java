@@ -10,6 +10,14 @@ import static com.github.zella.rxprocess2.RxProcessConfig.DEFAULT_PROCESS_TIMEOU
 
 public abstract class BaseReactiveProcessBuilder<T> implements IReactiveProcessBuilder<T> {
 
+    protected byte[] stdin = {};
+
+    @Override
+    public IReactiveProcessBuilder<T> withStdin(byte[] data) {
+        this.stdin = data;
+        return this;
+    }
+
     @Override
     public Single<Exit> asWaitDone() {
         return asWaitDone(DEFAULT_PROCESS_TIMEOUT_MILLIS, TimeUnit.MILLISECONDS);

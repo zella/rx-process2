@@ -6,7 +6,7 @@ Add dependency:
 	<dependency>
 	    <groupId>com.github.zella</groupId>
 	    <artifactId>rx-process2</artifactId>
-	    <version>0.2.0-BETA1</version>
+	    <version>0.2.0-BETA2</version>
 	</dependency>
 
 

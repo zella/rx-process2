@@ -1,4 +1,4 @@
-**Rx-java2 wrapper for subprocess execution** - `Support java.lang.Process` and `com.zaxxer.nuprocess.NuProcess`. 
+**Rx-java2 wrapper for subprocess execution** - Support `java.lang.Process` and `com.zaxxer.nuprocess.NuProcess`. 
 
 ### Usage:
 Add dependency:
@@ -25,6 +25,9 @@ Add dependency:
     Single<byte[]> stdoutSingle = builder.asStdOutSingle();
 
     Single<Exit> waitExit = builder.asWaitDone();
+    
+    //suports stdin as single portion of bytes
+    builder.withStdin("hello worlds".getBytes())
 
 
 
